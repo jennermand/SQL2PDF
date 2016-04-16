@@ -1,0 +1,10 @@
+C:\CodeSovs\SQL2PDFReport\SQL2PDFReport\bin\Debug\SQL2PDFReport.dll
+C:\CodeSovs\SQL2PDFReport\SQL2PDFReport\bin\Debug\SQL2PDFReport.pdb
+C:\CodeSovs\SQL2PDFReport\SQL2PDFReport\obj\Debug\SQL2PDFReport.csprojResolveAssemblyReference.cache
+C:\CodeSovs\SQL2PDFReport\SQL2PDFReport\obj\Debug\SQL2PDFReport.dll
+C:\CodeSovs\SQL2PDFReport\SQL2PDFReport\obj\Debug\SQL2PDFReport.pdb
+C:\CodeSovs\SQL2PDFReport\SQL2PDFReport\bin\Debug\SQL2PDFReport.dll.config
+C:\CodeSovs\SQL2PDFReport\SQL2PDFReport\bin\Debug\BouncyCastle.Crypto.dll
+C:\CodeSovs\SQL2PDFReport\SQL2PDFReport\bin\Debug\itextsharp.dll
+C:\CodeSovs\SQL2PDFReport\SQL2PDFReport\bin\Debug\BouncyCastle.Crypto.pdb
+C:\CodeSovs\SQL2PDFReport\SQL2PDFReport\bin\Debug\itextsharp.xml
