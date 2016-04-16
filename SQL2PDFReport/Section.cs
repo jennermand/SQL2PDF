@@ -78,7 +78,7 @@ namespace SQL2PDFReport
             }
         }
         
-        virtual public IEnumerable<Paragraph> Paragraphs(IEnumerable<Dictionary<string, object>> data)
+        virtual public IEnumerable<Paragraph> Paragraphs(IEnumerable<Dictionary<string, object>> data, iTextSharp.text.Font _font)
         {
             foreach (var d in data)
             {
@@ -86,7 +86,7 @@ namespace SQL2PDFReport
                 {
                     if (show(k))
                     {
-                        yield return new Paragraph(d[k].ToString());
+                        yield return new Paragraph(d[k].ToString(), _font);
                     }
 
                     if (isMultiFields(k))
@@ -94,7 +94,7 @@ namespace SQL2PDFReport
                         var par = new Paragraph();
                         foreach (var p in getMultifields(k))
                         {
-                            par.Add(new Paragraph(d[k].ToString()));
+                            par.Add(new Paragraph(d[k].ToString(), _font));
                         }
                         yield return par;
                     }
@@ -228,7 +228,7 @@ namespace SQL2PDFReport
             }
 
         }
-        public override IEnumerable<Paragraph> Paragraphs(IEnumerable<Dictionary<string, object>> data)
+        public override IEnumerable<Paragraph> Paragraphs(IEnumerable<Dictionary<string, object>> data, iTextSharp.text.Font _font)
         {
             IEnumerable<IGrouping<object, Dictionary<string, object>>> newList = null;
             if (!string.IsNullOrEmpty(DistinctBy))
@@ -251,8 +251,11 @@ namespace SQL2PDFReport
                     IEnumerable<Dictionary<string, object>> liste = from i in x.FirstOrDefault().Keys
                                                                     where show(i)
                                                                     select x.FirstOrDefault();
-                    foreach (var p in this.getTable(liste.Distinct()))
+                    foreach (var p in this.getTable(_font, liste.Distinct()))
+                    {
+                        p.Font = _font;
                         result.Add(p);
+                    }
                         //ifTable.Add(p);
                 }
                 else
@@ -261,29 +264,36 @@ namespace SQL2PDFReport
                     {
                         //if (show(y.Key))
                         //{
+                        
                         if (y is PhraseField)//  isPhrase(y.Key))
-                            result.Add(new Phrase(x.FirstOrDefault()[y.Key].ToString()));
+                            result.Add(new Phrase(x.FirstOrDefault()[y.Key].ToString(),_font));
                         else if (y is TextPhraseField)// isTextPhrase(y.Key))
-                            result.Add(new Phrase(getField(y.Key).Text));
+                            result.Add(new Phrase(getField(y.Key).Text, _font));
+                        else if (y is ParagraphField)// isTextPhrase(y.Key))
+                            result.Add(new Paragraph(x.FirstOrDefault()[y.Key].ToString(), _font));
                         else if (isMultiFields(y.Key))
                         {
                             IEnumerable<Dictionary<string, object>> liste = from i in x.FirstOrDefault().Keys
                                                                             where show(i)
                                                                             select x.FirstOrDefault();
                             foreach (var tempP in getMultiParagraphs(y, liste.Distinct()))
+                            {
+                                tempP.Font = _font;
                                 result.Add(tempP);
+                            }
                         }
                         else
-                            result.Add(new Paragraph(x.FirstOrDefault()[y.Key].ToString()));
+                            result.Add(new Paragraph(x.FirstOrDefault()[y.Key].ToString(), _font));
                         //}
                     }
                 }
                 foreach (var s in Sections)
                 {
-                    foreach (var p in s.Paragraphs(x))
+                    foreach (var p in s.Paragraphs(x, _font))
                     {
                         if (result == null)
                             result = new Paragraph();
+                        p.Font = _font;
                         result.Add(p);
                     }
                 }
@@ -305,26 +315,55 @@ namespace SQL2PDFReport
     [Serializable]
     public class Table : Section
     {
-        public override IEnumerable<Paragraph> Paragraphs(IEnumerable<Dictionary<string, object>> data)
-        {            
-            foreach (var p in this.getTable(data))
+        public List<CalcField> CalcList { get; set; }
+
+
+
+        public override IEnumerable<Paragraph> Paragraphs(IEnumerable<Dictionary<string, object>> data, iTextSharp.text.Font _font)
+        {
+            foreach (var p in this.getTable(_font, data))
+            {
+                p.Font = _font;
                 yield return p;
+            }
+            /*
+            if (CalcList != null && CalcList.Count() > 0)
+            {
+                var tempRes = new Dictionary<string, decimal>();
+                foreach (var x in CalcList)
+                {
+                    tempRes.Add(x.Key, data.Sum(x.Key));
+                }
+
+                foreach (var x in DisplayFields)
+                {
+                    if (tempRes.ContainsKey(x))
+                    {
+
+                    }
+                }
+            }*/
         }
     }
 
     [Serializable]
     public class Header : Section
     {
+        public string  ImagePath { get; set; }
+    }
 
+    public class Footer : Header
+    {
     }
 
     [Serializable]
     public static class SectionExtensions
     {
-       public static IEnumerable<Paragraph> getTable (this Section section, IEnumerable<Dictionary<string, object>> data)
+        public static IEnumerable<Paragraph> getTable(this Section section, iTextSharp.text.Font _font, IEnumerable<Dictionary<string, object>> data)
        {
            Paragraph result = new Paragraph();
            PdfPTable table = new PdfPTable(section.DisplayFields.Count());
+           table.HeaderRows = 1;
            table.SplitLate = false;
            List<int> widths = new List<int>();
            foreach (var x in section.DisplayFields)
@@ -344,7 +383,7 @@ namespace SQL2PDFReport
                if (d is CellFields)
                    tekst = (d as CellFields).Header;
 
-               var pc = new PdfPCell(new Phrase(tekst));
+               var pc = new PdfPCell(new Phrase(tekst,(new Font(){ Style= SQL2PDFReport.Style.bold}).Parse( _font)));
                pc.NoWrap = true;
                table.AddCell(pc);
            }
@@ -355,14 +394,62 @@ namespace SQL2PDFReport
                {
                    if (section.show(d))
                    {
-                       var pc = new PdfPCell(new Phrase(l[d].ToString()));
+                       var pc = new PdfPCell(new Phrase(l[d].ToString(), _font));
                        pc.NoWrap = true;
                        table.AddCell(pc);
                    }
                }
            }
+
+           if (section is Table && (section as Table).CalcList != null)
+           {
+               List<CalcField> CalcList = (section as Table).CalcList;
+               if (CalcList != null && CalcList.Count() > 0)
+               {
+                   var tempRes = new Dictionary<string, decimal>();
+                   foreach (var x in CalcList)
+                   {
+                       tempRes.Add(x.Key, data.Sum(x.Key));
+                   }
+
+                   foreach (var x in section.DisplayFields)
+                   {
+                       if (tempRes.ContainsKey(x.Key))
+                       {
+                           var pc = new PdfPCell(new Phrase(tempRes[x.Key].ToString(),(new Font(){ Style= SQL2PDFReport.Style.bold}).Parse( _font)));
+                           pc.NoWrap = true;
+                           table.AddCell(pc);
+                       }
+                       else
+                       {
+                           var pc = new PdfPCell();
+                           pc.NoWrap = true;
+                           table.AddCell(pc);
+                       }
+                   }
+               }
+           }
+
            result.Add(table);
            yield return result;
        }
+
+        public static decimal Sum(this IEnumerable<Dictionary<string, object>> data, string key)
+        {
+            decimal result = 0;
+
+            foreach (var d in data)
+            {
+                if (d.ContainsKey(key))
+                {
+                        decimal temp = 0;
+                        if (decimal.TryParse(d[key].ToString(), out temp))
+                            result += temp;
+                }
+            }
+            return result;
+        }
     }
+
+
 }

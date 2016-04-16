@@ -34,7 +34,7 @@ namespace SQL2PDFReport
 
         public void Create(string filename)
         {
-            _report.Generate(filename, _report.Sections);
+            _report.Generate(filename);
         }
 
         public void SaveProjekt(string filename)

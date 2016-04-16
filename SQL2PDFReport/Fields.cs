@@ -21,7 +21,9 @@ namespace SQL2PDFReport
         [XmlAttribute("Key")]
         public string Key { get; set; }
         //public bool Print { get; set; }
-       
+
+        public Font Font { get; set; }
+
         protected FieldType _field;
 
         [XmlIgnore]        
@@ -51,6 +53,18 @@ namespace SQL2PDFReport
             Width = 1;
             _field = FieldType.CellField;
         }
+    }
+
+    [Serializable]
+    [XmlType("CalcField")]
+    public abstract class CalcField: CellFields
+    {
+    }
+
+    [Serializable]
+    [XmlType("SumField")]
+    public class SumField : CalcField
+    {
     }
 
     [Serializable]
